@@ -7,5 +7,8 @@
 body {
   background: black;
   color: white;
-  font-family: sans-serif;
+  font-family:
+  Inter,
+  system-ui,
+  sans-serif;
 }

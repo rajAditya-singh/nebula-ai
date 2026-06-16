@@ -50,7 +50,11 @@
 }
 
 .hero-title {
-  font-size: 72px;
+  font-size: clamp(
+    48px,
+    7vw,
+    72px
+  );
 
   font-weight: 800;
 
@@ -246,7 +250,7 @@
     padding:
       24px
       20px
-      180px;
+      140px;
 
     gap: 20px;
   }
@@ -273,10 +277,37 @@
   }
 
   .chat-bubble {
-    max-width: 100%;
+    max-width: 88%;
   }
 
   .message-text {
+    font-size: 15px;
+  line-height: 1.7;
+  }
+
+  .hero-screen {
+  justify-content: center;
+
+  min-height: calc(100vh - 180px);
+
+  padding-top: 0;
+  padding-bottom: 120px;
+}
+
+  .hero-content {
+    transform: scale(0.9);
+  max-width: 340px;
+  margin: 0 auto;
+
+  }
+
+  .hero-title {
+    font-size: 36px;
+    line-height: 1.1;
+  }
+
+  .hero-description {
     font-size: 16px;
+    margin-bottom: 24px;
   }
 }

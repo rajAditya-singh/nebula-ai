@@ -204,6 +204,10 @@
 
     align-items: center;
     justify-content: center;
+    backdrop-filter: blur(20px);
+
+  box-shadow:
+    0 0 20px rgba(139,92,246,.15);
   }
 
   .close-sidebar {
@@ -223,7 +227,13 @@
 
     z-index: 999;
 
-    transition: .35s ease;
+    transition:
+  left .35s cubic-bezier(
+    0.22,
+    1,
+    0.36,
+    1
+  );
   }
 
   .sidebar-open {
