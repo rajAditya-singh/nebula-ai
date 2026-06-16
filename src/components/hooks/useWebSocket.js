@@ -12,7 +12,7 @@ function useWebSocket() {
 
     useEffect(() => {
         const ws = new WebSocket(
-            "wss://nebula-ai-backend.onrender.com"
+            "ws://localhost:3001"
         );
 
         ws.onopen = () => {

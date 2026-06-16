@@ -17,9 +17,19 @@ function saveRecording() {
         return null;
     }
 
-    const filePath = path.join(
+    const recordingsDir = path.join(
         __dirname,
-        "recordings",
+        "recordings"
+    );
+
+    if (!fs.existsSync(recordingsDir)) {
+        fs.mkdirSync(recordingsDir, {
+            recursive: true,
+        });
+    }
+
+    const filePath = path.join(
+        recordingsDir,
         `recording-${Date.now()}.webm`
     );
 
