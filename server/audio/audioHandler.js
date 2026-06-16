@@ -14,7 +14,7 @@ function handleAudioChunk(audioChunk) {
 
 function saveRecording() {
     if (audioChunks.length === 0) {
-        return;
+        return null;
     }
 
     const filePath = path.join(
@@ -37,6 +37,8 @@ function saveRecording() {
     );
 
     audioChunks = [];
+
+    return filePath;
 }
 
 module.exports = {

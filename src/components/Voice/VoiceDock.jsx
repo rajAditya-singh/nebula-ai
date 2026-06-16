@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 
 import useWebSocket from "../hooks/useWebSocket";
 import useAudioRecorder from "../hooks/useAudioRecorder";
@@ -12,16 +12,32 @@ import StatusText from "./StatusText";
 
 import { VOICE_STATES } from "../constants/voiceStates";
 
-function VoiceDock() {
+function VoiceDock({ setMessages }) {
   const [voiceState, setVoiceState] = useState(VOICE_STATES.IDLE);
 
   const { sendMessage, sendAudioChunk, lastMessage } = useWebSocket();
 
   const { volume } = useMicrophone();
+  const getTime = () =>
+    new Date().toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
 
-  const { startRecording, stopRecording } = useAudioRecorder(sendAudioChunk);
+  const handleRecordingStopped = useCallback(() => {
+    console.log("Sending stop-listening");
 
-  const handleSilence = () => {
+    sendMessage({
+      type: "stop-listening",
+    });
+  }, [sendMessage]);
+
+  const { startRecording, stopRecording } = useAudioRecorder(
+    sendAudioChunk,
+    handleRecordingStopped,
+  );
+
+  const handleSilence = useCallback(() => {
     if (voiceState === VOICE_STATES.LISTENING) {
       stopRecording();
 
@@ -29,10 +45,28 @@ function VoiceDock() {
 
       console.log("Silence Detected");
     }
-  };
+  }, [voiceState, stopRecording]);
 
-  // ENERGY VAD
-  useVoiceActivity(volume, handleSilence);
+  useVoiceActivity(
+    voiceState === VOICE_STATES.LISTENING ? volume : 0,
+    handleSilence,
+  );
+
+  useEffect(() => {
+    const clearHistory = () => {
+      sendMessage({
+        type: "clear-history",
+      });
+
+      console.log("History Cleared");
+    };
+
+    window.addEventListener("clear-nebula-history", clearHistory);
+
+    return () => {
+      window.removeEventListener("clear-nebula-history", clearHistory);
+    };
+  }, [sendMessage]);
 
   useEffect(() => {
     if (!lastMessage) return;
@@ -46,20 +80,62 @@ function VoiceDock() {
         setVoiceState(VOICE_STATES.PROCESSING);
         break;
 
-      case "speaking":
-        setVoiceState(VOICE_STATES.SPEAKING);
+      case "transcript":
+        console.log("Transcript:", lastMessage.transcript);
+
+        if (lastMessage.transcript) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              role: "user",
+              text: lastMessage.transcript,
+              time: getTime(),
+            },
+          ]);
+        }
+
         break;
 
-      case "idle":
-        stopRecording();
+      case "assistant-response": {
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            text: lastMessage.message,
+            time: getTime(),
+          },
+        ]);
+        console.log("AI Response:", lastMessage.message);
 
+        setVoiceState(VOICE_STATES.SPEAKING);
+
+        speechSynthesis.cancel();
+
+        const utterance = new SpeechSynthesisUtterance(lastMessage.message);
+
+        utterance.rate = 1;
+        utterance.pitch = 1;
+        utterance.volume = 1;
+
+        utterance.onend = () => {
+          console.log("Speech Finished");
+
+          setVoiceState(VOICE_STATES.IDLE);
+        };
+
+        speechSynthesis.speak(utterance);
+
+        break;
+      }
+
+      case "idle":
         setVoiceState(VOICE_STATES.IDLE);
         break;
 
       default:
         break;
     }
-  }, [lastMessage, stopRecording]);
+  }, [lastMessage]);
 
   const handleMicClick = () => {
     if (voiceState === VOICE_STATES.IDLE) {
@@ -69,6 +145,14 @@ function VoiceDock() {
         type: "start-listening",
       });
     }
+  };
+
+  const handleManualStop = () => {
+    speechSynthesis.cancel();
+
+    setVoiceState(VOICE_STATES.IDLE);
+
+    console.log("Assistant Interrupted");
   };
 
   return (
@@ -83,7 +167,7 @@ function VoiceDock() {
 
       <MicOrb state={voiceState} onMicClick={handleMicClick} />
 
-      <StopButton />
+      <StopButton onStop={handleManualStop} />
     </div>
   );
 }

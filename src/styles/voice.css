@@ -375,3 +375,66 @@
         transform: scale(1);
     }
 }
+
+/* =========================
+   TABLET
+========================= */
+
+@media (max-width: 1024px) {
+
+  .voice-dock {
+    left: 20px;
+    right: 20px;
+
+    padding: 0 30px;
+  }
+
+  .mic-orb {
+    width: 120px;
+    height: 120px;
+  }
+
+  .status-text {
+    font-size: 16px;
+  }
+}
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 768px) {
+
+  .voice-dock {
+    left: 10px;
+    right: 10px;
+
+    height: 85px;
+
+    padding: 0 15px;
+  }
+
+  .mic-orb {
+    width: 90px;
+    height: 90px;
+  }
+
+  .mic-wrapper {
+    top: -15px;
+  }
+
+  .status-text {
+    font-size: 14px;
+  }
+
+  .waveform {
+    display: none;
+  }
+
+  .stop-btn {
+    width: 70px;
+    height: 36px;
+
+    font-size: 13px;
+  }
+}

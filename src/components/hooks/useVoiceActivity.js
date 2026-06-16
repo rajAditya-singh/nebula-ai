@@ -1,70 +1,80 @@
 import { useEffect, useRef } from "react";
 
 function useVoiceActivity(
-    volume,
-    onSilence
+  volume,
+  onSilence
 ) {
-    const silenceTimerRef =
-        useRef(null);
+  const silenceTimeoutRef =
+    useRef(null);
 
-    const noiseSamplesRef =
-        useRef([]);
+  const silenceTriggeredRef =
+    useRef(false);
 
-    const thresholdRef =
-        useRef(12);
+  useEffect(() => {
+    const SPEECH_THRESHOLD = 15;
+    const SILENCE_DELAY = 1500;
 
-    useEffect(() => {
-        // Collect room noise samples
-        if (
-            noiseSamplesRef.current.length < 40
-        ) {
-            noiseSamplesRef.current.push(
-                volume
-            );
+    // User is speaking
+    if (
+      volume >
+      SPEECH_THRESHOLD
+    ) {
+      silenceTriggeredRef.current =
+        false;
 
-            const averageNoise =
-                noiseSamplesRef.current.reduce(
-                    (sum, value) =>
-                        sum + value,
-                    0
-                ) /
-                noiseSamplesRef.current.length;
+      if (
+        silenceTimeoutRef.current
+      ) {
+        clearTimeout(
+          silenceTimeoutRef.current
+        );
 
-            thresholdRef.current =
-                averageNoise + 10;
-            console.log(
-                "Adaptive Threshold:",
-                thresholdRef.current
-            );
-            return;
-        }
+        silenceTimeoutRef.current =
+          null;
+      }
 
-        const SPEECH_THRESHOLD =
-            thresholdRef.current;
+      return;
+    }
 
-        const SILENCE_DELAY = 2000;
+    // Already triggered once
+    if (
+      silenceTriggeredRef.current
+    ) {
+      return;
+    }
 
-        if (
-            volume > SPEECH_THRESHOLD
-        ) {
-            clearTimeout(
-                silenceTimerRef.current
-            );
+    // Timer already running
+    if (
+      silenceTimeoutRef.current
+    ) {
+      return;
+    }
 
-            return;
-        }
+    console.log(
+      "Starting silence timer..."
+    );
 
-        silenceTimerRef.current =
-            setTimeout(() => {
-                onSilence();
-            }, SILENCE_DELAY);
+    silenceTimeoutRef.current =
+      setTimeout(() => {
+        console.log(
+          "SILENCE TRIGGERED"
+        );
 
-        return () => {
-            clearTimeout(
-                silenceTimerRef.current
-            );
-        };
-    }, [volume, onSilence]);
+        silenceTriggeredRef.current =
+          true;
+
+        silenceTimeoutRef.current =
+          null;
+
+        onSilence();
+      }, SILENCE_DELAY);
+
+    return () => {
+      // Intentionally NOT clearing here
+      // because volume updates constantly
+      // and would keep resetting the timer.
+    };
+  }, [volume, onSilence]);
 }
 
 export default useVoiceActivity;

@@ -1,7 +1,11 @@
+import { useState } from "react";
+
 import SidebarItem from "./SidebarItem";
 import UserProfile from "./UserProfile";
 
 import {
+  Menu,
+  X,
   MessageSquarePlus,
   MessagesSquare,
   Settings,
@@ -9,29 +13,53 @@ import {
   Sparkles,
 } from "lucide-react";
 
-function Sidebar() {
+function Sidebar({ onNewChat }) {
+  const [isOpen, setIsOpen] = useState(false);
+
   return (
-    <aside className="sidebar">
-      <h1 className="logo">AI Voice Assistant</h1>
+    <>
+      <button className="mobile-menu-btn" onClick={() => setIsOpen(true)}>
+        <Menu size={24} />
+      </button>
 
-      <nav className="sidebar-menu">
-        <SidebarItem
-          icon={<MessageSquarePlus size={20} />}
-          text="New Chat"
-          active
-        />
+      <div
+        className={`sidebar-overlay ${isOpen ? "show-overlay" : ""}`}
+        onClick={() => setIsOpen(false)}
+      />
 
-        <SidebarItem icon={<MessagesSquare size={20} />} text="Chats" />
+      <aside className={`sidebar ${isOpen ? "sidebar-open" : ""}`}>
+        <button className="close-sidebar" onClick={() => setIsOpen(false)}>
+          <X size={24} />
+        </button>
 
-        <SidebarItem icon={<Settings size={20} />} text="Settings" />
+        <h1 className="logo">Adiz AI</h1>
 
-        <SidebarItem icon={<Mic size={20} />} text="Voice" />
+        <nav className="sidebar-menu">
+          <div
+            onClick={() => {
+              onNewChat();
+              setIsOpen(false);
+            }}
+          >
+            <SidebarItem
+              icon={<MessageSquarePlus size={20} />}
+              text="New Chat"
+              active
+            />
+          </div>
 
-        <SidebarItem icon={<Sparkles size={20} />} text="Theme" />
-      </nav>
+          <SidebarItem icon={<MessagesSquare size={20} />} text="Chats" />
 
-      <UserProfile />
-    </aside>
+          <SidebarItem icon={<Settings size={20} />} text="Settings" />
+
+          <SidebarItem icon={<Mic size={20} />} text="Voice" />
+
+          <SidebarItem icon={<Sparkles size={20} />} text="Theme" />
+        </nav>
+
+        <UserProfile />
+      </aside>
+    </>
   );
 }
 

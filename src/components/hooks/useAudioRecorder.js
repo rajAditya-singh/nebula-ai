@@ -1,63 +1,110 @@
-import { useRef } from "react";
+import {
+    useRef,
+    useCallback,
+} from "react";
 
-function useAudioRecorder(sendAudioChunk) {
-    const mediaRecorderRef =
-        useRef(null);
+function useAudioRecorder(
+    sendAudioChunk,
+    onRecordingStopped
+) {
+    const mediaRecorderRef = useRef(null);
 
-    const startRecording =
-        async () => {
-            try {
-                const stream =
-                    await navigator.mediaDevices.getUserMedia({
-                        audio: true,
-                    });
+    const pendingUploadsRef = useRef([]);
 
-                const mediaRecorder =
-                    new MediaRecorder(
-                        stream
-                    );
+    const startRecording = async () => {
+        try {
+            const stream =
+                await navigator.mediaDevices.getUserMedia({
+                    audio: true,
+                });
 
-                mediaRecorderRef.current =
-                    mediaRecorder;
+            const mediaRecorder =
+                new MediaRecorder(stream);
 
-                mediaRecorder.ondataavailable =
-                    (event) => {
-                        if (
-                            event.data &&
-                            event.data.size > 0
-                        ) {
+            mediaRecorderRef.current =
+                mediaRecorder;
+
+            pendingUploadsRef.current = [];
+
+            mediaRecorder.ondataavailable =
+                (event) => {
+                    if (
+                        event.data &&
+                        event.data.size > 0
+                    ) {
+                        const uploadPromise =
                             sendAudioChunk(
                                 event.data
                             );
-                        }
-                    };
 
-                mediaRecorder.start(
-                    250
-                );
+                        pendingUploadsRef.current.push(
+                            uploadPromise
+                        );
+                    }
+                };
 
-                console.log(
-                    "Recording Started"
-                );
-            } catch (error) {
-                console.error(
-                    "Recording Error:",
-                    error
-                );
-            }
-        };
+            mediaRecorder.onstop =
+                async () => {
+                    console.log(
+                        "MediaRecorder Finished"
+                    );
 
-    const stopRecording = () => {
-        if (
-            mediaRecorderRef.current
-        ) {
-            mediaRecorderRef.current.stop();
+                    try {
+                        await Promise.all(
+                            pendingUploadsRef.current
+                        );
+
+                        console.log(
+                            "All audio chunks sent"
+                        );
+                    } catch (error) {
+                        console.error(
+                            "Chunk upload error:",
+                            error
+                        );
+                    }
+
+                    if (
+                        onRecordingStopped
+                    ) {
+                        onRecordingStopped();
+                    }
+
+                    stream
+                        .getTracks()
+                        .forEach((track) =>
+                            track.stop()
+                        );
+                };
+
+            mediaRecorder.start(250);
 
             console.log(
-                "Recording Stopped"
+                "Recording Started"
+            );
+        } catch (error) {
+            console.error(
+                "Recording Error:",
+                error
             );
         }
     };
+
+    const stopRecording =
+        useCallback(() => {
+            if (
+                mediaRecorderRef.current &&
+                mediaRecorderRef.current
+                    .state !==
+                "inactive"
+            ) {
+                mediaRecorderRef.current.stop();
+
+                console.log(
+                    "Recording Stopped"
+                );
+            }
+        }, []);
 
     return {
         startRecording,
